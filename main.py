@@ -1,5 +1,7 @@
 import pygame as pg
+import tkinter as tk
 import sys
+import os
 import random
 
 BLACK = (0, 0, 0)
@@ -7,52 +9,24 @@ GREY = (200, 200, 200)
 WHITE = (255, 255, 255)
 blockSize = 20
 borderSize = blockSize // 10
-# WINDOW_HEIGHT = 400
 N_ROWS = 18
-# WINDOW_WIDTH = 400
 N_COLUMNS = 32
+pg_height = N_ROWS * (blockSize + borderSize) - borderSize
+pg_width = N_COLUMNS * (blockSize + borderSize) - borderSize
 GENERATION = 0
-# random
-# C = [[random.choice([True, False])
-#             for _ in range(N_ROWS)]
-#            for _ in range(N_COLUMNS)]
+PLAY = True
+tick = 500
 
 C1 = [[False] * N_ROWS for _ in range(N_COLUMNS)]
 C2 = [[False] * N_ROWS for _ in range(N_COLUMNS)]
-C1[2][5] = True
-C1[3][3] = True
-C1[3][5] = True
-C1[4][4] = True
-C1[4][5] = True
+
 
 CELLS = [C1,  C2]
 
 
-def main():
-    global SCREEN, CLOCK
-    pg.init()
-    SCREEN = pg.display.set_mode(
-        # (N_COLUMNS * blockSize, N_ROWS * blockSize))
-        (N_COLUMNS * (blockSize + borderSize) - borderSize,
-         N_ROWS * (blockSize + borderSize) - borderSize))
-    CLOCK = pg.time.Clock()
-    SCREEN.fill(WHITE)
-
-    while True:
-        SCREEN.fill(WHITE)
-        drawGrid()
-        pg.time.delay(500)
-        newGeneration()
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                sys.exit()
-
-        pg.display.update()
-
-
-def drawGrid():
+def draw_grid():
     for x in range(N_COLUMNS):
-        pg.draw.line(SCREEN, GREY,
+        pg.draw.line(screen, GREY,
                      [0, x * (blockSize + borderSize) + blockSize],
                      [N_COLUMNS * (blockSize + borderSize) - borderSize,
                       x * (blockSize + borderSize) + blockSize],
@@ -61,15 +35,16 @@ def drawGrid():
             rect = pg.Rect(x * (blockSize + borderSize),
                            y * (blockSize + borderSize),
                            blockSize, blockSize)
-            pg.draw.rect(SCREEN, BLACK if CELLS[GENERATION][x][y] else WHITE, rect)
+            pg.draw.rect(screen, BLACK if CELLS[GENERATION][x][y] else WHITE, rect)
     for y in range(N_COLUMNS):
-        pg.draw.line(SCREEN, GREY,
+        pg.draw.line(screen, GREY,
                      [y * (blockSize + borderSize) + blockSize, 0],
                      [y * (blockSize + borderSize) + blockSize,
                       N_ROWS * (blockSize + borderSize) - borderSize],
                      borderSize)
 
-def newGeneration():
+
+def new_generation():
     global GENERATION
     # print('~' * 32)
     # for y in range(N_ROWS):
@@ -95,4 +70,93 @@ def newGeneration():
     GENERATION = 1 - GENERATION
 
 
-main()
+root = tk.Tk()
+embed_pygame = tk.Frame(root, width=pg_width, height=pg_height)
+embed_pygame.pack(side=tk.TOP)
+
+os.environ['SDL_WINDOWID'] = str(embed_pygame.winfo_id())
+os.environ['SDL_VIDEODRIVER'] = 'windib'
+pg.display.init()
+screen = pg.display.set_mode((pg_width, pg_height))
+screen.fill(WHITE)
+
+
+def play_pause(menu):
+    global PLAY
+    if PLAY:
+        menu.entryconfig(5, label="Play")
+    else:
+        menu.entryconfig(5, label="Pause")
+    PLAY = not PLAY
+
+
+def speed(n):
+    global tick
+    tick = 500 if tick == 4000 or tick < 70 else int(tick * n)
+
+
+def random_field():
+    global CELLS
+    CELLS[GENERATION] = [[random.choice([True, False])
+                          for _ in range(N_ROWS)]
+                         for _ in range(N_COLUMNS)]
+
+
+def blank_field():
+    global CELLS
+    CELLS[GENERATION] = [[False] * N_ROWS for _ in range(N_COLUMNS)]
+
+
+def filled_field():
+    global CELLS
+    CELLS[GENERATION] = [[True] * N_ROWS for _ in range(N_COLUMNS)]
+
+
+def glider():
+    global CELLS
+    CELLS[GENERATION] = [[False] * N_ROWS for _ in range(N_COLUMNS)]
+    CELLS[GENERATION][2][5] = True
+    CELLS[GENERATION][3][3] = True
+    CELLS[GENERATION][3][5] = True
+    CELLS[GENERATION][4][4] = True
+    CELLS[GENERATION][4][5] = True
+
+
+main_menu = tk.Menu()
+
+window_menu = tk.Menu(tearoff=0)
+window_menu.add_command(label="Change dimensions")
+window_menu.add_separator()
+window_menu.add_command(label="Random", command=random_field)
+window_menu.add_command(label="Blank", command=blank_field)
+window_menu.add_command(label="Filled", command=filled_field)
+main_menu.add_cascade(label="Window", menu=window_menu)
+
+figures_menu = tk.Menu(tearoff=0)
+figures_menu.add_command(label="Glider", command=glider)
+main_menu.add_cascade(label="Figures", menu=figures_menu)
+
+main_menu.add_command(label="   |   ", activebackground=main_menu.cget("background"))
+main_menu.add_command(label="Slower", command=lambda: speed(2))
+main_menu.add_command(label="Pause", command=lambda: play_pause(main_menu))
+main_menu.add_command(label="Faster", command=lambda: speed(0.5))
+root.config(menu=main_menu)
+
+
+def pygame_loop():
+    global tick
+    screen.fill(WHITE)
+    draw_grid()
+    pg.display.flip()
+    root.update()
+    if PLAY:
+        new_generation()
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
+            sys.exit()
+    pg.display.update()
+    root.after(tick, pygame_loop)
+
+
+pygame_loop()
+tk.mainloop()
