@@ -20,8 +20,12 @@ tick = 500
 C1 = [[False] * N_ROWS for _ in range(N_COLUMNS)]
 C2 = [[False] * N_ROWS for _ in range(N_COLUMNS)]
 
-
 CELLS = [C1,  C2]
+
+
+def coordinates(position):
+    return position[0] // (blockSize + borderSize), \
+           position[1] // (blockSize + borderSize)
 
 
 def draw_grid():
@@ -154,6 +158,10 @@ def pygame_loop():
     for event in pg.event.get():
         if event.type == pg.QUIT:
             sys.exit()
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            x, y = coordinates(event.pos)
+            CELLS[GENERATION][x][y] = not CELLS[GENERATION][x][y]
+
     pg.display.update()
     root.after(tick, pygame_loop)
 
