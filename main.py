@@ -2,6 +2,7 @@ import pygame as pg
 import tkinter as tk
 import os
 import random
+from figures import *
 
 BLACK = (0, 0, 0)
 GREY = (200, 200, 200)
@@ -163,14 +164,11 @@ def filled_field():
     CELLS[GENERATION] = [[True] * N_ROWS for _ in range(N_COLUMNS)]
 
 
-def glider():
+def figure(name):
     global CELLS
     CELLS[GENERATION] = [[False] * N_ROWS for _ in range(N_COLUMNS)]
-    CELLS[GENERATION][2][5] = True
-    CELLS[GENERATION][3][3] = True
-    CELLS[GENERATION][3][5] = True
-    CELLS[GENERATION][4][4] = True
-    CELLS[GENERATION][4][5] = True
+    for cell in figures_dict[name]:
+        CELLS[GENERATION][cell[0]][cell[1]] = True
 
 
 main_menu = tk.Menu()
@@ -184,7 +182,32 @@ window_menu.add_command(label="Filled", command=filled_field)
 main_menu.add_cascade(label="Window", menu=window_menu)
 
 figures_menu = tk.Menu(tearoff=0)
-figures_menu.add_command(label="Glider", command=glider)
+spaceships_menu = tk.Menu(tearoff=0)
+figures_menu.add_cascade(label="Spaceships", menu=spaceships_menu)
+spaceships_menu.add_command(label="Glider",
+                            command=lambda: figure('glider'))
+spaceships_menu.add_command(label="Lightweight spaceship",
+                            command=lambda: figure('lightweight'))
+spaceships_menu.add_command(label="Middleweight spaceship",
+                            command=lambda: figure('middleweight'))
+spaceships_menu.add_command(label="Heavyweight spaceship",
+                            command=lambda: figure('heavyweight'))
+spaceships_menu.add_command(label="Dart",
+                            command=lambda: figure('dart'))
+oscillators_menu = tk.Menu(tearoff=0)
+figures_menu.add_cascade(label="Oscillators", menu=oscillators_menu)
+oscillators_menu.add_command(label="Blinker",
+                             command=lambda: figure('blinker'))
+oscillators_menu.add_command(label="Blinker побольше",
+                             command=lambda: figure('blinkerB'))
+oscillators_menu.add_command(label="Pulsar",
+                             command=lambda: figure('pulsar'))
+oscillators_menu.add_command(label="Unix",
+                             command=lambda: figure('unix'))
+oscillators_menu.add_command(label="Figure eight",
+                             command=lambda: figure('eight'))
+figures_menu.add_command(label="Gosper glider gun",
+                         command=lambda: figure('The Gun'))
 main_menu.add_cascade(label="Figures", menu=figures_menu)
 
 main_menu.add_command(label="   |   ", activebackground=main_menu.cget("background"))
@@ -205,6 +228,7 @@ def pygame_loop():
     for event in pg.event.get():
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             x, y = coordinates(event.pos)
+            # print(f'({x}, {y}),', end=' ')
             CELLS[GENERATION][x][y] = not CELLS[GENERATION][x][y]
 
     pg.display.update()
